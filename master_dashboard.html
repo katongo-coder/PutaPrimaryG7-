@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grade 7 Master Analytics | Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { --blue: #3498db; --pink: #e91e63; --dark: #2c3e50; --bg: #f8f9fa; --danger: #e74c3c; --success: #27ae60; --accent: #f1c40f; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; padding-top: 40px; overflow-x: hidden; }
+
+        /* FEATURE: SIGNATURE SCROLLING HEADER */
+        .signature-scroll { width: 100%; background: #1a252f; color: var(--accent); padding: 10px 0; position: fixed; top: 0; left: 0; white-space: nowrap; overflow: hidden; font-weight: bold; z-index: 2000; border-bottom: 2px solid var(--accent); }
+        .marquee { display: inline-block; padding-left: 100%; animation: scroll 25s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        nav ul { list-style: none; padding: 0; }
+        nav li a { padding: 15px 25px; display: block; color: white; text-decoration: none; border-bottom: 1px solid #34495e; }
+        /* FEATURE: SIDEBAR & PROFILE */
+        #sidebar { width: 250px; background: var(--dark); color: white; height: 100vh; position: fixed; left: 0; transition: 0.3s; z-index: 1000; box-shadow: 4px 0 10px rgba(0,0,0,0.1); }
+        #sidebar.hidden { left: -250px; }
+        .profile-section { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .profile-pic { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--accent); object-fit: cover; cursor: pointer; transition: 0.3s; }
+        .profile-pic:hover { transform: scale(1.05); }
+        
+        nav ul { list-style: none; padding: 0; margin: 0; }
+        nav ul li a { padding: 15px 20px; display: block; color: white; text-decoration: none; border-bottom: 1px solid #34495e; transition: 0.2s; }
+        nav ul li a:hover { background: #34495e; padding-left: 30px; }
+
+        /* MAIN LAYOUT */
+        #main { flex: 1; margin-left: 250px; padding: 30px; transition: 0.3s; width: calc(100% - 250px); }
+        #main.full { margin-left: 0; width: 100%; }
+        .menu-btn { position: fixed; top: 55px; left: 20px; z-index: 1001; background: var(--dark); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* FEATURE: TOOLBAR BUTTONS */
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .btn { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn:active { transform: scale(0.95); }
+
+        /* STAT CARDS */
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid #ccc; }
+        .card h3 { font-size: 11px; color: #7f8c8d; margin: 0; text-transform: uppercase; }
+        .card p { font-size: 24px; font-weight: bold; margin: 10px 0 0; }
+
+        /* TABLE STYLES */
+        .table-container { background: white; border-radius: 12px; overflow-x: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: var(--dark); color: white; padding: 15px; font-size: 12px; border: 1px solid #34495e; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
+        .class-col { text-align: left; font-weight: bold; padding-left: 20px; color: var(--dark); background: #fcfcfc; }
+
+        /* FEATURE: ROTATING BADGE */
+        .rotating-badge { position: fixed; bottom: 20px; right: 20px; width: 100px; height: 100px; background: var(--accent); color: var(--dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; text-align: center; animation: rotate 15s linear infinite; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 999; pointer-events: none; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        #conn-status { font-size: 10px; padding: 3px 8px; border-radius: 10px; margin-top: 5px; display: inline-block; }
+        .online { background: #2ecc71; color: white; }
+        .offline { background: #e74c3c; color: white; }
+
+        @media print { .menu-btn, #sidebar, .signature-scroll, .rotating-badge, .toolbar { display: none !important; } #main { margin-left: 0; width: 100%; padding: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="signature-scroll">
+        <div class="marquee">GRADE 7 MASTER GENDER ANALYTICS SYSTEM • REAL-TIME ATTENDANCE MONITORING • DEVELOPED BY MR. KATONGO</div>
+    </div>
+
+    <button class="menu-btn" onclick="toggleMenu()">☰ Menu</button>
+
+    <aside id="sidebar">
+        <div class="profile-section">
+            <img id="user-pic" src="https://www.w3schools.com/howto/img_avatar.png" class="profile-pic" onclick="document.getElementById('file-in').click()" title="Click to Change Photo">
+            <input type="file" id="file-in" hidden onchange="uploadPic(this)">
+            <h3 style="margin: 10px 0 5px 0; font-size: 16px;">Mr. Katongo</h3>
+            <span id="conn-status" class="offline">Connecting...</span>
+        </div>
+        <nav>
+            <ul>
+                
+                <li><a href="monthly_report.html" style="background: #34495e; border-left: 5px solid var(--accent);">🌍 Monthly Report</a></li>
+                
+                <li><a href="#" onclick="logout()" style="color: var(--danger);">🚪 Logout</a></li>
+
+                
+            </ul>
+        </nav>
+    </aside>
+
+    <main id="main">
+        <h1 style="color: var(--dark); margin-top: 40px; border-bottom: 2px solid #eee; padding-bottom: 10px;">Master Gender Attendance Report</h1>
+
+        <div class="toolbar">
+            <button class="btn" style="background: #e67e22;" onclick="downloadPDF()">📄 Download PDF</button>
+            <button class="btn" style="background: var(--dark);" onclick="window.print()">🖨️ Print Report</button>
+            <button class="btn" style="background: var(--danger); margin-left: auto;" onclick="triggerReset()">🔄 Reset Master Data</button>
+        </div>
+
+        <div class="grid-stats">
+            <div class="card" style="border-color: #16a085;"><h3>Enrolled</h3><p id="sum-en">0</p></div>
+            <div class="card" style="border-color: var(--blue);"><h3>Boys Pres</h3><p id="sum-bp" style="color: var(--blue)">0</p></div>
+            <div class="card" style="border-color: var(--pink);"><h3>Girls Pres</h3><p id="sum-gp" style="color: var(--pink)">0</p></div>
+            <div class="card" style="border-color: var(--dark);"><h3>Total Pres</h3><p id="sum-tp">0</p></div>
+            <div class="card" style="border-color: #85c1e9;"><h3>Boys Abs</h3><p id="sum-ba" style="color: var(--danger)">0</p></div>
+            <div class="card" style="border-color: #f1948a;"><h3>Girls Abs</h3><p id="sum-ga" style="color: var(--danger)">0</p></div>
+            <div class="card" style="border-color: var(--danger);"><h3>Total Abs</h3><p id="sum-ta" style="color: var(--danger)">0</p></div>
+        </div>
+
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Class Name</th>
+                        <th rowspan="2">Enrol</th>
+                        <th colspan="3" style="background: #2980b9;">Learners Present</th>
+                        <th colspan="3" style="background: #c0392b;">Learners Absent</th>
+                        <th rowspan="2">Perf %</th>
+                    </tr>
+                    <tr>
+                        <th style="background: #3498db;">Boys</th><th style="background: #3498db;">Girls</th><th style="background: #3498db;">Total</th>
+                        <th style="background: #e74c3c;">Boys</th><th style="background: #e74c3c;">Girls</th><th style="background: #e74c3c;">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <tr><td colspan="9" style="padding:40px; color:#95a5a6;">Initialising secure link...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div class="rotating-badge">OFFICIAL MASTER<br>SYSTEM<br>2026</div>
+
+    <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_Q6JEuqKdrsA-ZK29XyLMMlLox2rCb0OzZPk_Gzgwrp0-43badQ1jGmnFQDoZqSVo/exec";
+
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('hidden');
+        document.getElementById('main').classList.toggle('full');
+    }
+
+    function uploadPic(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem('profile_pic', e.target.result);
+                document.getElementById('user-pic').src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('loggedIn');
+        window.location.href = 'index.html';
+    }
+
+    async function fetchMasterData() {
+        const status = document.getElementById('conn-status');
+        const tbody = document.getElementById('table-body');
+        
+        try {
+            const savedPic = localStorage.getItem('profile_pic');
+            if(savedPic) document.getElementById('user-pic').src = savedPic;
+
+            const response = await fetch(SCRIPT_URL);
+            const data = await response.json();
+            
+            status.innerText = "ONLINE SYNCED";
+            status.className = "online";
+            
+            renderData(data);
+        } catch (error) {
+            console.error("Connection Error:", error);
+            status.innerText = "LINK OFFLINE";
+            status.className = "offline";
+            tbody.innerHTML = `<tr><td colspan="9" style="color:red; padding:30px;">
+                <b>Connection Failed!</b><br>
+                1. Ensure Google Script is deployed as "Anyone".<br>
+                2. Check your internet connection.
+            </td></tr>`;
+        }
+    }
+
+    function renderData(data) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = "";
+        let t = { en: 0, bp: 0, gp: 0, tp: 0, ba: 0, ga: 0, ta: 0 };
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='9' style='padding:20px;'>No data found.</td></tr>";
+            return;
+        }
+
+        // FEATURE: FILTER DUPLICATES - Only keep the LATEST entry for each class
+        let uniqueData = {};
+        data.forEach(row => {
+            const className = row.className || row.classname || row.Class || "Unknown";
+            uniqueData[className] = row; 
+        });
+
+        // Process the filtered unique classes
+        Object.values(uniqueData).forEach(row => {
+            const cName = row.className || row.classname || row.Class || "Unknown";
+            const en = parseInt(row.enrollment || row.enrol || 0);
+            const bp = parseInt(row.bP || row.boysPresent || 0);
+            const gp = parseInt(row.gP || row.girlsPresent || 0);
+            const tp = parseInt(row.totalP || row.present || 0);
+            const ba = parseInt(row.bA || row.boysAbsent || 0);
+            const ga = parseInt(row.gA || row.girlsAbsent || 0);
+            const ta = parseInt(row.totalA || row.absent || 0);
+
+            // PERFORMANCE FIX: Handles both decimal (1.0) and percentage (100) formats
+            let rawPerf = parseFloat(row.performance || 0);
+            let displayPerf = (rawPerf <= 1 && rawPerf > 0) ? (rawPerf * 100).toFixed(1) : rawPerf.toFixed(1);
+
+            // Add to Grand Totals
+            t.en += en; t.bp += bp; t.gp += gp; t.tp += tp;
+            t.ba += ba; t.ga += ga; t.ta += ta;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="class-col">${cName}</td>
+                    <td>${en}</td>
+                    <td style="color:var(--blue)">${bp}</td>
+                    <td style="color:var(--pink)">${gp}</td>
+                    <td style="background:#f0f7ff"><b>${tp}</b></td>
+                    <td style="color:var(--danger)">${ba}</td>
+                    <td style="color:var(--danger)">${ga}</td>
+                    <td style="background:#fff0f0; color:var(--danger)"><b>${ta}</b></td>
+                    <td><b>${displayPerf}%</b></td>
+                </tr>`;
+        });
+
+        // Update Summary Totals at the top of the page
+        document.getElementById('sum-en').innerText = t.en;
+        document.getElementById('sum-bp').innerText = t.bp;
+        document.getElementById('sum-gp').innerText = t.gp;
+        document.getElementById('sum-tp').innerText = t.tp;
+        document.getElementById('sum-ba').innerText = t.ba;
+        document.getElementById('sum-ga').innerText = t.ga;
+        document.getElementById('sum-ta').innerText = t.ta;
+    }
+
+    async function triggerReset() {
+        const pass = prompt("Enter Admin Password to CLEAR ALL DATA:");
+        if (pass === "1234") {
+            if(confirm("This will permanently delete all records from the Google Sheet. Continue?")) {
+                await fetch(SCRIPT_URL + "?action=reset");
+                alert("Master Reset Complete.");
+                location.reload();
+            }
+        } else if (pass !== null) {
+            alert("Incorrect Password.");
+        }
+    }
+
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(18);
+        doc.text("Grade 7 Master Gender Attendance Report", 14, 20);
+        doc.setFontSize(10);
+        doc.text("Generated on: " + new Date().toLocaleString(), 14, 28);
+        
+        doc.autoTable({ 
+            html: '#data-table', 
+            startY: 35, 
+            theme: 'grid',
+            headStyles: { fillColor: [44, 62, 80] },
+            styles: { fontSize: 8 }
+        });
+        doc.save("Master_Gender_Report.pdf");
+    }
+
+    window.onload = fetchMasterData;
+</script>
+</body>
+</html>

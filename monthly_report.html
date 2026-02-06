@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grade 7 Analytics | Pro Archive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { --blue: #3498db; --pink: #e91e63; --dark: #2c3e50; --bg: #f4f7f6; --danger: #e74c3c; --success: #27ae60; --accent: #f1c40f; --sidebar-width: 250px; }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; display: flex; transition: 0.3s; color: var(--dark); }
+
+        /* --- SIDEBAR SYSTEM --- */
+        .sidebar { height: 100vh; width: var(--sidebar-width); position: fixed; left: 0; top: 0; background: #1a252f; color: white; transition: 0.3s; z-index: 1000; overflow-x: hidden; }
+        .sidebar.closed { width: 0; }
+        .sidebar-header { padding: 25px; text-align: center; border-bottom: 1px solid #34495e; background: #141c22; }
+        .sidebar a { padding: 15px 25px; text-decoration: none; color: #bdc3c7; display: block; transition: 0.2s; white-space: nowrap; }
+        .sidebar a:hover { background: #34495e; color: var(--accent); border-left: 4px solid var(--accent); }
+        .sidebar a.active { color: var(--accent); background: #2c3e50; border-left: 4px solid var(--accent); }
+
+        /* --- MAIN CONTENT AREA --- */
+        .main-content { margin-left: var(--sidebar-width); width: 100%; padding: 25px; transition: 0.3s; }
+        .main-content.expanded { margin-left: 0; }
+
+        /* --- HEADER & ROTATING BADGE --- */
+        .header-pro { background: white; padding: 20px 30px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-left: 5px solid var(--dark); }
+        
+        .badge-box { position: relative; width: 90px; height: 90px; }
+        .rotating-svg { width: 100%; height: 100%; animation: spin 12s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .badge-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; font-weight: 900; text-align: center; color: var(--dark); line-height: 1; }
+
+        /* --- CONTROLS & STATS --- */
+        .glass-panel { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .filter-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-item { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .stat-item span { font-size: 11px; text-transform: uppercase; color: #7f8c8d; font-weight: bold; }
+        .stat-item b { display: block; font-size: 22px; color: var(--dark); margin-top: 5px; }
+
+        /* --- TABLE STYLE --- */
+        .table-wrap { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: var(--dark); color: white; padding: 12px; text-transform: uppercase; font-size: 11px; border: 1px solid #34495e; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        .date-cell { font-weight: bold; color: var(--dark); }
+        .class-cell { font-weight: bold; color: var(--blue); text-align: left; padding-left: 20px; }
+
+        /* UI ELEMENTS */
+        .btn { padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-fetch { background: var(--dark); color: white; }
+        .btn-pdf { background: #e67e22; color: white; }
+        .menu-toggle { font-size: 20px; cursor: pointer; margin-right: 15px; color: var(--dark); }
+        input, select { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="mySidebar">
+        <div class="sidebar-header">
+            <h2 style="margin:0; color:var(--accent)">G7 ANALYTICS</h2>
+            <small style="color:#7f8c8d">MASTER ARCHIVE SYSTEM</small>
+        </div>
+        
+        
+        <nav>
+            <ul>
+                <a href="master_dashboard.html"><i class="fas fa-chart-pie"></i>Master Dashboard</a>
+                <li><a href="index.html">👥 Logout</a></li>
+                
+            </ul>
+        </nav>
+    </div>
+
+    <div class="main-content" id="mainArea">
+        
+        <div class="header-pro">
+            <div style="display: flex; align-items: center;">
+                <i class="fas fa-bars menu-toggle" onclick="toggleSidebar()"></i>
+                <div>
+                    <h1 style="margin:0; font-size: 24px;">🏛️ Monthly History Log</h1>
+                    <p style="margin:0; color:#7f8c8d; font-size: 12px;">Verified Historical Attendance Data</p>
+                </div>
+             
+
+            </div>
+
+            <div class="badge-box">
+                <svg class="rotating-svg" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#f1c40f" stroke-width="2" stroke-dasharray="6,3"/>
+                </svg>
+                <div class="badge-label">OFFICIAL<br>DATA<br>2026</div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="filter-row">
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label style="font-size:11px; font-weight:bold;">SELECT MONTH</label>
+                    <select id="month">
+                        <option value="01">January</option><option value="02">February</option>
+                        <option value="03">March</option><option value="04">April</option>
+                        <option value="05">May</option><option value="06">June</option>
+                        <option value="07">July</option><option value="08">August</option>
+                        <option value="09">September</option><option value="10">October</option>
+                        <option value="11">November</option><option value="12">December</option>
+                    </select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                    <label style="font-size:11px; font-weight:bold;">YEAR</label>
+                    <select id="year"><option value="2026">2026</option><option value="2025">2025</option></select>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:5px; flex-grow:1;">
+                    <label style="font-size:11px; font-weight:bold;">SEARCH CLASS</label>
+                    <input type="text" id="classSearch" placeholder="Filter records..." onkeyup="filterData()">
+                </div>
+                <button class="btn btn-fetch" onclick="fetchArchive()"><i class="fas fa-sync-alt"></i> LOAD DATA</button>
+                <button class="btn btn-pdf" onclick="generatePDF()"><i class="fas fa-download"></i> EXPORT</button>
+            </div>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-item" style="border-color: var(--accent);"><span>Total Records</span><b id="stat-count">0</b></div>
+            <div class="stat-item" style="border-color: var(--blue);"><span>Avg Present</span><b id="stat-pres">0</b></div>
+            <div class="stat-item" style="border-color: var(--danger);"><span>Avg Absent</span><b id="stat-abs">0</b></div>
+            <div class="stat-item" style="border-color: var(--success);"><span>Performance</span><b id="stat-perf">0%</b></div>
+        </div>
+
+        <div class="table-wrap">
+            <table id="archive-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Date</th>
+                        <th rowspan="2">Class Name</th>
+                        <th rowspan="2">Enrol</th>
+                        <th colspan="3" style="background:#2980b9">Learners Present</th>
+                        <th colspan="3" style="background:#c0392b">Learners Absent</th>
+                        <th rowspan="2">Perf %</th>
+                    </tr>
+                    <tr>
+                        <th style="background:#3498db">B</th><th style="background:#3498db">G</th><th style="background:#3498db">Tot</th>
+                        <th style="background:#e74c3c">B</th><th style="background:#e74c3c">G</th><th style="background:#e74c3c">Tot</th>
+                    </tr>
+                </thead>
+                <tbody id="archive-body">
+                    <tr><td colspan="10" style="padding:50px; color:#95a5a6;">Select month and click Load Data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR URL
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_Q6JEuqKdrsA-ZK29XyLMMlLox2rCb0OzZPk_Gzgwrp0-43badQ1jGmnFQDoZqSVo/exec";
+
+        function toggleSidebar() {
+            const sb = document.getElementById('mySidebar');
+            const ma = document.getElementById('mainArea');
+            sb.classList.toggle('closed');
+            ma.classList.toggle('expanded');
+        }
+
+        async function fetchArchive() {
+            const m = document.getElementById('month').value;
+            const y = document.getElementById('year').value;
+            const tbody = document.getElementById('archive-body');
+            
+            tbody.innerHTML = "<tr><td colspan='10'>Syncing with server...</td></tr>";
+            
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getMonthly&month=${m}&year=${y}`);
+                const data = await response.json();
+                renderTable(data);
+            } catch (err) {
+                tbody.innerHTML = "<tr><td colspan='10' style='color:red;'>Connection Failed. Check URL.</td></tr>";
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('archive-body');
+            tbody.innerHTML = "";
+            let s = { count: 0, tp: 0, ta: 0, perf: 0 };
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='10'>No data found for this period.</td></tr>";
+                updateStats(s); return;
+            }
+
+            data.forEach(r => {
+                let p = parseFloat(r.performance || 0);
+                if (p <= 1 && p > 0) p = p * 100;
+
+                s.count++; s.tp += Number(r.totalP); s.ta += Number(r.totalA); s.perf += p;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="date-cell">${r.date}</td>
+                        <td class="class-cell">${r.classname}</td>
+                        <td>${r.enrollment}</td>
+                        <td>${r.bP}</td><td>${r.gP}</td><td style="background:#f0f7ff"><b>${r.totalP}</b></td>
+                        <td>${r.bA}</td><td>${r.gA}</td><td style="background:#fff0f0; color:var(--danger)"><b>${r.totalA}</b></td>
+                        <td><b style="color:var(--success)">${p.toFixed(1)}%</b></td>
+                    </tr>`;
+            });
+            updateStats(s);
+        }
+
+        function updateStats(s) {
+            document.getElementById('stat-count').innerText = s.count;
+            document.getElementById('stat-pres').innerText = s.count ? (s.tp / s.count).toFixed(1) : 0;
+            document.getElementById('stat-abs').innerText = s.count ? (s.ta / s.count).toFixed(1) : 0;
+            document.getElementById('stat-perf').innerText = s.count ? (s.perf / s.count).toFixed(1) + "%" : "0%";
+        }
+
+        function filterData() {
+            const val = document.getElementById("classSearch").value.toUpperCase();
+            const rows = document.getElementById("archive-body").getElementsByTagName("tr");
+            for (let row of rows) {
+                const text = row.getElementsByTagName("td")[1]?.innerText.toUpperCase() || "";
+                row.style.display = text.includes(val) ? "" : "none";
+            }
+        }
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.text("Grade 7 Master Archive Report", 14, 15);
+            doc.autoTable({ 
+                html: '#archive-table', 
+                startY: 20,
+                theme: 'grid',
+                headStyles: { fillColor: [44, 62, 80] },
+                styles: { fontSize: 8 }
+            });
+            doc.save("Monthly_Archive.pdf");
+        }
+    </script>
+</body>
+</html>

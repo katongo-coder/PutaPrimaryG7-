@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment | Grade 7B System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { 
+            --primary: #1e3c72; /* Mr. Katongo's Deep Navy */
+            --accent: #e67e22;  /* Arts Orange */
+            --light: #f0f2f5; 
+            --danger: #c0392b; 
+            --success: #27ae60;
+            --dark: #1a1a2e;
+        }
+
+        body { margin: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--light); display: flex; flex-direction: row; min-height: 100vh; }
+
+        /* Sidebar - Responsive Logic */
+        #sidebar { 
+            width: 280px; background: var(--dark); color: white; 
+            display: flex; flex-direction: column; transition: 0.3s;
+            position: sticky; top: 0; height: 100vh;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .profile-area { padding: 40px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .avatar { 
+            width: 70px; height: 70px; background: var(--accent); 
+            border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; 
+            justify-content: center; font-size: 26px; font-weight: bold; color: white;
+            border: 3px solid rgba(255,255,255,0.2);
+        }
+
+        /* Main Content Area */
+        .main-content { flex: 1; padding: 30px; box-sizing: border-box; width: 100%; }
+        .card { 
+            background: white; border-radius: 12px; box-shadow: 0 4px 25px rgba(0,0,0,0.05); 
+            padding: 25px; margin-bottom: 25px; border-top: 6px solid var(--primary); 
+        }
+        
+        /* Form Layout */
+        .input-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); 
+            gap: 20px; margin-bottom: 25px; 
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 8px; font-weight: 600; color: #444; font-size: 14px; }
+        input, select { padding: 12px; border: 1px solid #dcdfe6; border-radius: 8px; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1); }
+        input[readonly] { background: #f5f7fa; color: #909399; cursor: not-allowed; }
+        
+        /* Table Styling */
+        .table-wrapper { overflow-x: auto; width: 100%; border-radius: 8px; background: white; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th { text-align: left; padding: 16px; background: #f8f9fb; color: var(--primary); border-bottom: 2px solid #edf0f2; font-size: 13px; font-weight: 700; }
+        td { padding: 16px; border-bottom: 1px solid #f1f1f1; font-size: 14px; color: #555; }
+
+        .btn-action { 
+            width: 100%; padding: 15px; border: none; border-radius: 8px; 
+            color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+            background: var(--primary); font-size: 15px;
+        }
+        .btn-action:hover { background: var(--dark); transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.3); margin-top: 10px; }
+        .btn-outline:hover { background: rgba(255,255,255,0.1); }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: auto; position: relative; }
+            .profile-area { padding: 20px; }
+            .main-content { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="profile-area">
+        <div class="avatar">KK</div>
+        <h5 style="margin: 0; letter-spacing: 1px;">MR. KATONGO</h5>
+        <small style="opacity: 0.6; text-transform: uppercase;">Grade 7B Lead Teacher</small>
+    </div>
+    <div style="padding: 20px; margin-top: auto;">
+        <button class="btn-action btn-outline" onclick="location.reload()">Refresh App</button>
+        <button class="btn-action" style="background: var(--danger); margin-top: 10px;" onclick="downloadPDF()">Export 7B Report</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="card">
+        <h2 style="margin: 0; color: var(--primary); display: flex; align-items: center;">
+            <span style="margin-right: 10px;">🎨</span> Grade 7B Enrollment Portal
+        </h2>
+        <p style="color: #7f8c8d; font-size: 0.95rem;">Official data entry for Grade 7B Class Records and Master Sheet.</p>
+        <hr style="opacity: 0.1; margin: 20px 0;">
+        
+        <div class="input-grid">
+            <div class="form-group">
+                <label>System Time</label>
+                <input type="text" id="timestampField" readonly tabindex="-1">
+            </div>
+            <div class="form-group">
+                <label>Learner Full Name</label>
+                <input type="text" id="studentName" placeholder="Enter Full Name..." autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select id="gender">
+                    <option value="Boy">Boy</option>
+                    <option value="Girl">Girl</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-action" style="background: var(--accent);" id="submitBtn" onclick="saveToCloud()">Secure Enrollment Submit</button>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="margin: 0; color: var(--dark);">Class Enrollment Log</h4>
+            <span id="counter" style="background: var(--light); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; color: var(--primary);">0 Learners</span>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Recorded At</th>
+                        <th>Learner Full Name</th>
+                        <th>Gender</th>
+                        <th>Cloud Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- SETTINGS ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxb5wNnyXo4a7WAzR12k1PfYV3Qmpym89H-siOfg6uDSz3hjutANEVLnpkUcLX6dbLp/exec"; 
+    const CLASS_NAME = "Grade 7B";
+    const TEACHER = "Mr. Katongo";
+    const STORAGE_KEY = "grade7B_attendance_data";
+
+    // Auto-Clock
+    function updateTimestamp() {
+        document.getElementById('timestampField').value = new Date().toLocaleString();
+    }
+    setInterval(updateTimestamp, 1000);
+
+    function saveToCloud() {
+        const nameInput = document.getElementById('studentName');
+        const name = nameInput.value.trim().toUpperCase(); 
+        const gender = document.getElementById('gender').value;
+        const time = document.getElementById('timestampField').value;
+        const btn = document.getElementById('submitBtn');
+
+        if(!name) { alert("Action Denied: Please enter a learner name."); return; }
+
+        // --- 1. ANTI-DUPLICATE LOGIC ---
+        const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        const isDuplicate = localData.some(entry => entry.name === name);
+
+        if (isDuplicate) {
+            alert(`DUPLICATE WARNING: "${name}" is already registered in Grade 7B.`);
+            return; 
+        }
+
+        const payload = {
+            className: CLASS_NAME,
+            teacher: TEACHER,
+            name: name,
+            gender: gender,
+            timestamp: time
+        };
+
+        // UI Feedback
+        btn.disabled = true;
+        btn.innerText = "Processing Encryption & Sync...";
+
+        // 2. SEND TO GOOGLE SHEETS
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            // Save Locally only after successful hand-off
+            localData.unshift(payload);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localData));
+            
+            alert("Success: Record safely transmitted to the Master Sheet.");
+            nameInput.value = "";
+            btn.disabled = false;
+            btn.innerText = "Secure Enrollment Submit";
+            renderTable();
+        }).catch(err => {
+            alert("Network Error: Could not reach the server.");
+            btn.disabled = false;
+            btn.innerText = "Secure Enrollment Submit";
+        });
+    }
+
+    function renderTable() {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        document.getElementById('counter').innerText = `${data.length} Learners`;
+        document.getElementById('tableBody').innerHTML = data.map(row => `
+            <tr>
+                <td style="color: #999; font-size: 12px;">${row.timestamp}</td>
+                <td style="font-weight: 700; color: var(--dark);">${row.name}</td>
+                <td>${row.gender}</td>
+                <td><span style="color: var(--success); font-weight: bold; font-size: 12px;">● CLOUD SYNCED</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        
+        doc.setFillColor(30, 60, 114);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.text(`Class Enrollment Report: ${CLASS_NAME}`, 14, 20);
+        
+        doc.autoTable({
+            head: [['Timestamp', 'Learner Name', 'Gender', 'Assigned Teacher']],
+            body: data.map(r => [r.timestamp, r.name, r.gender, r.teacher]),
+            startY: 40,
+            headStyles: { fillColor: [30, 60, 114] },
+            alternateRowStyles: { fillColor: [245, 247, 250] }
+        });
+        
+        doc.save(`Enrollment_Report_${CLASS_NAME}.pdf`);
+    }
+
+    window.onload = () => { updateTimestamp(); renderTable(); };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 7B | Merit List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        
+        :root { --primary: #1e3c72; --accent: #e67e22; }
+        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
+        .navbar { background: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .results-card { background: white; border-radius: 15px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); padding: 30px; margin-top: 20px; border-top: 5px solid var(--accent); }
+        .table thead { background: #1a2a3a; color: white; }
+        .btn-print { background: #e74c3c; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; }
+        .analysis-row { background-color: #f8f9fa; font-weight: bold; }
+        .boy-avg { color: #2980b9; }
+        .girl-avg { color: #8e44ad; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark mb-4">
+    <div class="container d-flex justify-content-between">
+        <span class="navbar-brand fw-bold">💻 Mr Katongo Grade 7B Class Teacher</span>
+        <button class="btn btn-light btn-sm fw-bold" onclick="downloadFullPDF()">📥 Download 7B PDF</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="results-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Learner Rankings</h4>
+            <input type="text" id="searchInput" class="form-control w-25" onkeyup="filterTable()" placeholder="Search by name...">
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Pos</th><th>Name</th><th>Sex</th><th>MAT</th><th>SCI</th><th>ENG</th><th>SOC</th><th>BEM</th><th>TECH</th><th>Total</th><th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+                <tfoot id="analysisFooter">
+                    </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL Specifically filtered for Grade 7B
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoX6xid2k91eSiOn7mf2qK4ktanxbUNbOw2tc1_MqlJzUzISJj_ntTuQThpGGFxR3V/exec?sheet=Grade 7B";
+    let studentData = [];
+
+    async function fetchData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            studentData = await response.json();
+            renderTable(studentData);
+            calculateAnalysis(studentData);
+        } catch (e) { console.error(e); }
+    }
+
+    function renderTable(data) {
+        const body = document.getElementById("resultsBody");
+        body.innerHTML = data.map(row => `
+            <tr>
+                <td><b>${row.Pos}</b></td>
+                <td class="text-uppercase fw-semibold">${row.Name}</td>
+                <td>${row.Sex}</td>
+                <td>${row.Maths}</td><td>${row.Science}</td><td>${row.English}</td>
+                <td>${row.Social}</td><td>${row.Bemba}</td><td>${row.CTS_Subject}</td>
+                <td class="text-primary fw-bold">${row.Total}</td>
+                <td class="text-center"><button class="btn-print" onclick='printReport(${JSON.stringify(row)})'>Print Report</button></td>
+            </tr>`).join('');
+    }
+
+    function calculateAnalysis(data) {
+        const footer = document.getElementById("analysisFooter");
+        const subjects = ['Maths', 'Science', 'English', 'Social', 'Bemba', 'CTS_Subject', 'Total'];
+        
+        const getAvg = (arr, key) => arr.length ? (arr.reduce((s, row) => s + Number(row[key]), 0) / arr.length).toFixed(1) : "0";
+
+        const boys = data.filter(s => s.Sex === "Boy");
+        const girls = data.filter(s => s.Sex === "Girl");
+
+        let html = `<tr class="analysis-row boy-avg"><td>-</td><td colspan="2">BOYS AVERAGE (n=${boys.length})</td>`;
+        subjects.forEach(sub => html += `<td>${getAvg(boys, sub)}</td>`);
+        html += `<td></td></tr>`;
+
+        html += `<tr class="analysis-row girl-avg"><td>-</td><td colspan="2">GIRLS AVERAGE (n=${girls.length})</td>`;
+        subjects.forEach(sub => html += `<td>${getAvg(girls, sub)}</td>`);
+        html += `<td></td></tr>`;
+
+        html += `<tr class="table-dark text-white"><td>-</td><td colspan="2">TOTAL CLASS AVERAGE</td>`;
+        subjects.forEach(sub => html += `<td>${getAvg(data, sub)}</td>`);
+        html += `<td></td></tr>`;
+
+        footer.innerHTML = html;
+    }
+
+    function downloadFullPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.setFontSize(16);
+        doc.text("Puta Primary School Grade 7B Mark Schedule Term One(1) 2026", 14, 15);
+        doc.autoTable({ html: '#resultsTable', startY: 22, theme: 'grid', styles: { fontSize: 8 } });
+        doc.save("Grade_7B_Full_Report.pdf");
+    }
+
+    function printReport(student) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        doc.rect(0, 0, 210, 40, 'F'); doc.setTextColor(255,255,255); doc.setFontSize(22);
+        doc.text("OFFICIAL LEARNER REPORT", 105, 20, { align: "center" });
+        doc.setFontSize(12); doc.setTextColor(0);
+        doc.text(`NAME: ${student.Name}`, 15, 55); doc.text(`CLASS: 7A`, 15, 62); doc.text(`POS: ${student.Pos}`, 140, 62);
+        doc.autoTable({
+            startY: 70, head: [['Subject', 'Score']],
+            body: [["Maths", student.Maths],["Science", student.Science],["English", student.English],["Social", student.Social],["Icibemba", student.Bemba],["Home Econ", student.CTS_Subject]],
+            theme: 'striped'
+        });
+        doc.text(`GRAND TOTAL: ${student.Total}`, 15, doc.lastAutoTable.finalY + 15);
+        doc.save(`${student.Name}_Report.pdf`);
+    }
+
+    function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const filtered = studentData.filter(s => s.Name.toLowerCase().includes(input));
+        renderTable(filtered);
+    }
+    window.onload = fetchData;
+</script>
+</body>
+</html>

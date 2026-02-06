@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Enrollment Viewer | Puta Primary</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --success: #27ae60;
+        }
+
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--primary); }
+        
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .nav-container { 
+            display: flex; justify-content: center; gap: 10px; padding: 20px; 
+            flex-wrap: wrap; background: white; border-bottom: 1px solid #ddd; 
+            position: sticky; top: 0; z-index: 100;
+        }
+        
+        .btn-tab { 
+            padding: 12px 24px; border: 2px solid var(--primary); background: transparent; 
+            color: var(--primary); font-weight: bold; cursor: pointer; border-radius: 5px; transition: 0.3s;
+        }
+        .btn-tab.active { background: var(--primary); color: white; }
+        .btn-tab:hover { background: rgba(44, 62, 80, 0.1); }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 15px; }
+        .card { background: var(--white); padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        
+        .summary-box { background: #eef2f7; padding: 10px 20px; border-radius: 8px; border-left: 4px solid var(--accent); }
+
+        .loader { 
+            display: none; border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); 
+            border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .table-responsive { overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f8f9fa; color: #333; text-align: left; padding: 15px; border-bottom: 2px solid #dee2e6; text-transform: uppercase; font-size: 13px; }
+        td { padding: 12px 15px; border-bottom: 1px solid #f1f1f1; font-size: 14px; }
+        tr:hover { background: #f9fbff; }
+
+        .btn-download { background: var(--success); color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-download:hover { background: #219150; transform: translateY(-1px); }
+
+        @media (max-width: 600px) {
+            .nav-container { padding: 10px; }
+            .btn-tab { flex: 1 1 45%; padding: 10px; font-size: 13px; }
+            .status-bar { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin:0; font-size: 1.6rem;">Puta Primary School</h1>
+    <p style="margin:5px 0 0; opacity: 0.9;">Enrollment Monitoring Dashboard</p>
+</header>
+
+<div class="nav-container">
+    <button class="btn-tab active" onclick="loadData('Grade 7A', this)">Grade 7A</button>
+    <button class="btn-tab" onclick="loadData('Grade 7B', this)">Grade 7B</button>
+    <button class="btn-tab" onclick="loadData('Grade 7C', this)">Grade 7C</button>
+    <button class="btn-tab" onclick="loadData('Master Sheet', this)">Master Sheet</button>
+</div>
+
+<div class="container">
+    <div class="card">
+        <div class="status-bar">
+            <div>
+                <h2 id="currentTitle" style="margin:0; color: var(--primary);">Grade 7A Enrollment</h2>
+                <div id="lastUpdated" class="summary-box" style="margin-top: 10px;">
+                    Select a class to load statistics...
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div id="loader" class="loader"></div>
+                <button class="btn-download" onclick="exportPDF()">Download PDF Report</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="enrollmentTable">
+                <thead>
+                    <tr id="tableHead">
+                        <th>Timestamp</th>
+                        <th>Learner Name</th>
+                        <th>Gender</th>
+                        <th>Teacher</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="10" style="text-align:center; padding:50px; color:#7f8c8d;">Please select a class tab above to fetch cloud data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    // Make sure this matches your deployed Google Apps Script URL exactly
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxb5wNnyXo4a7WAzR12k1PfYV3Qmpym89H-siOfg6uDSz3hjutANEVLnpkUcLX6dbLp/exec"; 
+    let currentData = [];
+    let currentClassName = "Grade 7A";
+
+    async function loadData(className, btnElement) {
+        currentClassName = className;
+        
+        // UI: Tab Switching
+        document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        
+        // UI: Loading State
+        document.getElementById('currentTitle').innerText = className + " Enrollment";
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px;">Accessing Google Sheets Database...</td></tr>';
+
+        try {
+            const fetchUrl = `${SCRIPT_URL}?action=readEnrollment&sheet=${encodeURIComponent(className)}`;
+            const response = await fetch(fetchUrl);
+            
+            if (!response.ok) throw new Error("Network response was not ok");
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                currentData = result.data;
+                renderTable(currentData);
+                
+                // Display the Gender Summary
+                const s = result.summary;
+                document.getElementById('lastUpdated').innerHTML = 
+                    `<strong>Total: ${s.total}</strong> | Boys: ${s.boys} | Girls: ${s.girls}`;
+            } else {
+                throw new Error(result.message || "Unknown error occurred");
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            document.getElementById('tableBody').innerHTML = 
+                `<tr><td colspan="10" style="text-align:center; color: #e74c3c; padding:30px;">
+                <strong>Error:</strong> ${error.message}<br>
+                <small>Check if the sheet name exists and your script is deployed to "Anyone".</small>
+                </td></tr>`;
+        } finally {
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    function renderTable(data) {
+        if (!data || data.length === 0) {
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px;">No student records found in this section.</td></tr>';
+            return;
+        }
+
+        // Generate headers dynamically based on sheet columns
+        const headers = Object.keys(data[0]);
+        document.getElementById('tableHead').innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+
+        // Generate rows
+        document.getElementById('tableBody').innerHTML = data.map(row => `
+            <tr>
+                ${headers.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('')}
+            </tr>
+        `).join('');
+    }
+
+    function exportPDF() {
+        if (currentData.length === 0) {
+            alert("No data available to export. Please load a class first.");
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        doc.setFontSize(18);
+        doc.setTextColor(44, 62, 80);
+        doc.text(`Official Enrollment: ${currentClassName}`, 14, 20);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Report Generated: ${new Date().toLocaleString()}`, 14, 28);
+
+        doc.autoTable({ 
+            html: '#enrollmentTable',
+            startY: 35,
+            theme: 'striped',
+            headStyles: { fillColor: [44, 62, 80], fontSize: 10 },
+            styles: { fontSize: 9 }
+        });
+        
+        doc.save(`${currentClassName}_Report.pdf`);
+    }
+
+    // Auto-load Grade 7A on start
+    window.onload = () => {
+        const firstBtn = document.querySelector('.btn-tab');
+        loadData('Grade 7A', firstBtn);
+    };
+</script>
+
+</body>
+</html>

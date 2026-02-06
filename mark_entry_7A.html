@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7A Entry | Ms. Milambo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #6b11cb; }
+        body { background: #f8f9fa; font-family: 'Inter', sans-serif; }
+        .navbar { background: var(--primary); }
+        .main-card { background: white; border-radius: 15px; padding: 30px; border-top: 5px solid #2575fc; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4"><div class="container"><span class="navbar-brand">🍎 Grade 7A | Ms. Milambo</span></div></nav>
+<div class="container">
+    <div class="main-card">
+        <form id="marksForm">
+            <div class="row g-3 mb-4">
+                <div class="col-md-9"><label class="fw-bold">Learner Name</label><input type="text" id="name" class="form-control" required></div>
+                <div class="col-md-3"><label class="fw-bold">Sex</label><select id="sex" class="form-select" required><option value="Boy">Boy</option><option value="Girl">Girl</option></select></div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4"><label>Maths</label><input type="number" name="maths" class="form-control" required></div>
+                <div class="col-md-4"><label>Science</label><input type="number" name="science" class="form-control" required></div>
+                <div class="col-md-4"><label>English</label><input type="number" name="english" class="form-control" required></div>
+                <div class="col-md-4"><label>Social</label><input type="number" name="social" class="form-control" required></div>
+                <div class="col-md-4"><label>Bemba</label><input type="number" name="bemba" class="form-control" required></div>
+                <div class="col-md-4"><label class="text-primary fw-bold">Home Economics (CTS)</label><input type="number" name="cts" class="form-control border-primary" required></div>
+            </div>
+            <button type="submit" id="btn" class="btn btn-primary w-100 mt-4 py-3 fw-bold">SUBMIT TO GRADE 7A</button>
+        </form>
+    </div>
+</div>
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoX6xid2k91eSiOn7mf2qK4ktanxbUNbOw2tc1_MqlJzUzISJj_ntTuQThpGGFxR3V/exec";
+    document.getElementById('marksForm').onsubmit = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn');
+        btn.disabled = true; btn.innerText = "Syncing...";
+        const payload = {
+            sheetName: "Grade 7A",
+            name: document.getElementById('name').value,
+            sex: document.getElementById('sex').value,
+            maths: e.target.maths.value,
+            science: e.target.science.value,
+            english: e.target.english.value,
+            social: e.target.social.value,
+            bemba: e.target.bemba.value,
+            he: e.target.cts.value, // Maps to CTS in script
+            timestamp: new Date().toLocaleString()
+        };
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .then(() => { alert("7A Record Saved!"); location.reload(); });
+    };
+</script>
+</body>
+</html>

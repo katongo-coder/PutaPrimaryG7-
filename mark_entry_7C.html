@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7C Entry | Mr. Mwanto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --primary: #00b09b; }
+        body { background: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
+        .navbar { background: #333; }
+        .main-card { background: white; border-radius: 12px; padding: 30px; border-left: 10px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-dark mb-4"><div class="container"><span class="navbar-brand">💻 Grade 7C | Mr. Mwanto</span></div></nav>
+<div class="container">
+    <div class="main-card">
+        <form id="marksForm">
+            <div class="row g-3 mb-4">
+                <div class="col-md-9"><label class="fw-bold">Learner Name</label><input type="text" id="name" class="form-control" required></div>
+                <div class="col-md-3"><label class="fw-bold">Sex</label><select id="sex" class="form-select"><option value="Boy">Boy</option><option value="Girl">Girl</option></select></div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4"><label>Maths</label><input type="number" name="maths" class="form-control" required></div>
+                <div class="col-md-4"><label>Science</label><input type="number" name="science" class="form-control" required></div>
+                <div class="col-md-4"><label>English</label><input type="number" name="english" class="form-control" required></div>
+                <div class="col-md-4"><label>Social Studies</label><input type="number" name="social" class="form-control" required></div>
+                <div class="col-md-4"><label>Icibemba</label><input type="number" name="bemba" class="form-control" required></div>
+                <div class="col-md-4"><label class="text-success fw-bold">Tech Studies (CTS)</label><input type="number" name="cts" class="form-control border-success" required></div>
+            </div>
+            <button type="submit" id="btn" class="btn btn-success w-100 mt-4 py-3 fw-bold">SUBMIT TO GRADE 7C</button>
+        </form>
+    </div>
+</div>
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoX6xid2k91eSiOn7mf2qK4ktanxbUNbOw2tc1_MqlJzUzISJj_ntTuQThpGGFxR3V/exec";
+    document.getElementById('marksForm').onsubmit = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn');
+        btn.disabled = true; btn.innerText = "Transmitting to 7C...";
+        const payload = {
+            sheetName: "Grade 7C",
+            name: document.getElementById('name').value,
+            sex: document.getElementById('sex').value,
+            maths: e.target.maths.value,
+            science: e.target.science.value,
+            english: e.target.english.value,
+            social: e.target.social.value,
+            bemba: e.target.bemba.value,
+            tech: e.target.cts.value, // Captured as 'tech' for the script
+            timestamp: new Date().toLocaleString()
+        };
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) })
+        .then(() => { alert("7C Data Uploaded!"); location.reload(); })
+        .catch(() => { alert("Connection Error"); btn.disabled = false; });
+    };
+</script>
+</body>
+</html>

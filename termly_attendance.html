@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Term Attendance Analysis | Grade 7B</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { 
+            --primary: #2c3e50; --accent: #3498db; --success: #27ae60; 
+            --danger: #e74c3c; --warning: #f39c12; --light: #f4f7f6; 
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light); margin: 0; display: flex; }
+        
+        .sidebar { position: fixed; left: -260px; top: 0; height: 100%; width: 250px; background: var(--primary); color: white; transition: 0.3s; z-index: 100; padding-top: 60px; }
+        .sidebar.active { left: 0; }
+        .sidebar ul { list-style: none; padding: 0; }
+        .sidebar li a { padding: 15px 25px; color: white; text-decoration: none; display: block; border-bottom: 1px solid #34495e; }
+        .sidebar li a:hover { background: var(--accent); }
+        .menu-toggle { position: fixed; top: 20px; left: 20px; z-index: 101; background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+
+        .content { flex: 1; padding: 40px; transition: 0.3s; width: 100%; margin-left: 0; }
+        .sidebar.active ~ .content { margin-left: 250px; }
+        .container { max-width: 1250px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: center; border-bottom: 4px solid var(--accent); }
+        .stat-card small { color: #7f8c8d; text-transform: uppercase; font-size: 11px; font-weight: bold; }
+        .stat-card div { font-size: 20px; font-weight: bold; color: var(--primary); margin-top: 5px; }
+
+        .absent-tracker { background: #fff5f5; border: 1px solid #feb2b2; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .absent-tracker h3 { margin-top: 0; color: #c53030; font-size: 16px; border-bottom: 1px solid #feb2b2; padding-bottom: 5px; }
+        .absent-list { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+        .absent-badge { background: #c53030; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+
+        .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; align-items: center; }
+        .toolbar input, .toolbar select { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-excel { background: #27ae60; }
+        .btn-pdf { background: #e74c3c; }
+        .btn-print { background: #34495e; }
+        .btn-backup { background: #f39c12; }
+        .btn-restore { background: #7f8c8d; }
+        .btn-danger { background: var(--danger); }
+
+        .report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .report-table th, .report-table td { border: 1px solid #eee; padding: 10px 5px; text-align: center; }
+        .report-table th { background: var(--primary); color: white; position: sticky; top: 0; }
+        .name-col { text-align: left !important; font-weight: bold; min-width: 180px; }
+        
+        .summary-row { background: #f1f4f9; font-weight: bold; color: var(--primary); border-top: 2px solid var(--primary); }
+        .grade-high { color: var(--success); font-weight: bold; }
+        .grade-mid { color: var(--warning); font-weight: bold; }
+        .grade-low { color: var(--danger); font-weight: bold; }
+
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            .sidebar, .menu-toggle, .toolbar, .absent-tracker { display: none !important; }
+            .content { padding: 0; margin: 0 !important; }
+            .container { box-shadow: none; border: none; width: 100%; max-width: none; padding: 0; }
+            .report-table { font-size: 10px; }
+            .report-table th { background-color: #2c3e50 !important; color: white !important; -webkit-print-color-adjust: exact; }
+            .summary-row { background-color: #f1f4f9 !important; -webkit-print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="menu-toggle" onclick="toggleMenu()">☰ Menu</button>
+    <nav class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="dashboard.html">🏠 Dashboard</a></li>
+            <li><a href="enrollment.html">👥 Grade 7B Enrollment</a></li>
+            <li><a href="daily_register.html" style="background: var(--accent);">📝 Daily Register</a></li>
+            <li><a href="mark_entry.html">📊 Enter 7B Marks</a></li>
+            <li><a href="view_marks.html">📜 View 7B Results</a></li>
+            <li><a href="view_all_marks.html">📜 View All Results</a></li>
+            <li><a href="daily_attendance_list.html">📂 Attendance Archives</a></li>
+            <li><a href="master_dashboard.html">📂 Master Dashboard</a></li>
+            <li><a href="monthly_report.html">📜 Monthly Report</a></li>
+            <li><a href="term_attendance.html">📂 Term Attendance</a></li>
+            <li><a href="#" onclick="logout()" style="color: var(--danger);">🚪 Logout</a></li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        <div class="container">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1>Termly Attendance Analysis</h1>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" onclick="resetAttendanceDates()">🗑️ Reset Dates</button>
+                    <button class="btn btn-print" onclick="window.print()">🖨️ Print Report</button>
+                </div>
+            </header>
+
+            <div class="summary-grid">
+                <div class="stat-card"><small>Boys Avg</small><div id="avg-boys">0%</div></div>
+                <div class="stat-card"><small>Girls Avg</small><div id="avg-girls">0%</div></div>
+                <div class="stat-card"><small>Class Avg</small><div id="avg-total">0%</div></div>
+                <div class="stat-card"><small>Days Tracked</small><div id="tracked-days">0</div></div>
+            </div>
+
+            <div class="absent-tracker" id="absent-tracker-box">
+                <h3>⚠️ Top 10 Chronic Absenteeism (Excludes Week 1)</h3>
+                <div class="absent-list" id="absent-list-content"></div>
+            </div>
+
+            <div class="toolbar">
+                <input type="text" id="searchName" placeholder="🔍 Search learner..." onkeyup="generateReport()">
+                <select id="term-select" onchange="generateReport()">
+                    <option value="1">Term 1 (Jan-Mar)</option>
+                    <option value="2">Term 2 (May-Jul)</option>
+                    <option value="3">Term 3 (Sep-Nov)</option>
+                </select>
+                <button class="btn btn-excel" onclick="exportToCSV()">Excel (CSV)</button>
+                <button class="btn btn-pdf" onclick="exportToPDF()">PDF Report</button>
+                <button class="btn btn-backup" onclick="backupData()">💾 Backup</button>
+                <button class="btn btn-restore" onclick="document.getElementById('restoreFile').click()">📂 Restore</button>
+                <input type="file" id="restoreFile" style="display:none" onchange="restoreData(this)">
+            </div>
+
+            <div style="overflow-x: auto; border: 1px solid #eee; border-radius: 8px;">
+                <table class="report-table" id="report-table">
+                    <thead><tr id="table-head"></tr></thead>
+                    <tbody id="report-body"></tbody>
+                    <tfoot id="report-foot"></tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        
+        function logout() {
+            localStorage.removeItem('loggedIn');
+            window.location.href = 'index.html';
+        }
+
+        function resetAttendanceDates() {
+            if (confirm("WARNING: This will erase all attendance dates and columns. Student enrollment names will NOT be deleted. Proceed?")) {
+                const security = prompt("Type 'RESET' to confirm deletion of attendance history:");
+                if (security === 'RESET') {
+                    localStorage.removeItem('attendance_history');
+                    alert("Attendance history cleared successfully.");
+                    location.reload();
+                }
+            }
+        }
+
+        function generateReport() {
+            const term = document.getElementById('term-select').value;
+            const search = document.getElementById('searchName').value.toLowerCase();
+            const students = JSON.parse(localStorage.getItem('grade7C_data')) || [];
+            const history = JSON.parse(localStorage.getItem('attendance_history')) || {};
+            
+            const termMonths = { "1": [0, 1, 2], "2": [4, 5, 6], "3": [8, 9, 10] };
+            const activeMonths = termMonths[term];
+            
+            const availableDates = Object.keys(history).filter(dateStr => {
+                const date = new Date(dateStr);
+                return activeMonths.includes(date.getMonth());
+            }).sort();
+
+            // Setup Header
+            const headRow = document.getElementById('table-head');
+            headRow.innerHTML = '<th class="name-col">Learner Name</th><th>Sex</th>';
+            availableDates.forEach(date => {
+                const d = new Date(date);
+                headRow.innerHTML += `<th>${d.getDate()}/${d.getMonth()+1}</th>`;
+            });
+            headRow.innerHTML += '<th>%</th><th>Remarks</th>';
+
+            // Build Student Rows
+            const tbody = document.getElementById('report-body');
+            tbody.innerHTML = '';
+            let boySum = 0, girlSum = 0, bCnt = 0, gCnt = 0;
+            let dateCounters = availableDates.map(() => ({ boys: 0, girls: 0 }));
+            let absentRecords = [];
+
+            // Identify dates after the first week (skip first 5 days) for the absenteeism list
+            const datesAfterFirstWeek = availableDates.slice(5);
+
+            students.filter(s => s.name.toLowerCase().includes(search)).forEach(student => {
+                let presentCount = 0;
+                let absentDaysAfterFirstWeek = 0;
+                let isBoy = (student.gender.toLowerCase() === 'boy' || student.gender.toLowerCase() === 'male');
+                let rowHtml = `<td class="name-col">${student.name}</td><td>${student.gender[0].toUpperCase()}</td>`;
+                
+                availableDates.forEach((date, idx) => {
+                    const isPresent = history[date].present && history[date].present.some(s => s.id === student.id);
+                    if (isPresent) {
+                        rowHtml += `<td style="color:green; font-weight:bold;">P</td>`;
+                        presentCount++;
+                        if (isBoy) dateCounters[idx].boys++; else dateCounters[idx].girls++;
+                    } else {
+                        rowHtml += `<td style="color:red;">A</td>`;
+                        // Track absence if it occurred after the first 5 recorded days
+                        if (idx >= 5) absentDaysAfterFirstWeek++;
+                    }
+                });
+
+                if(absentDaysAfterFirstWeek > 0) {
+                    absentRecords.push({ name: student.name, days: absentDaysAfterFirstWeek });
+                }
+
+                const percent = availableDates.length ? Math.round((presentCount / availableDates.length) * 100) : 0;
+                let remark = percent >= 90 ? "Excellent" : percent >= 75 ? "Good" : percent >= 50 ? "Fair" : "Poor";
+                let colorClass = percent >= 90 ? "grade-high" : percent >= 50 ? "grade-mid" : "grade-low";
+
+                rowHtml += `<td class="${colorClass}">${percent}%</td><td>${remark}</td>`;
+                tbody.innerHTML += `<tr>${rowHtml}</tr>`;
+
+                if (isBoy) { boySum += percent; bCnt++; } else { girlSum += percent; gCnt++; }
+            });
+
+            // Update Absenteeism Tracker (Limit to Top 10)
+            const absentContent = document.getElementById('absent-list-content');
+            absentRecords.sort((a, b) => b.days - a.days);
+            const top10Absent = absentRecords.slice(0, 10);
+            
+            absentContent.innerHTML = top10Absent.map(r => `
+                <div style="border:1px solid #ddd; padding:5px 10px; border-radius:5px; background:white;">
+                    ${r.name}: <span class="absent-badge">${r.days} Days</span>
+                </div>
+            `).join('') || "No significant absences recorded after Week 1.";
+
+            // Update Footer
+            const tfoot = document.getElementById('report-foot');
+            const boysAvg = bCnt ? Math.round(boySum/bCnt) + "%" : "0%";
+            const girlsAvg = gCnt ? Math.round(girlSum/gCnt) + "%" : "0%";
+            const totalAvg = (bCnt+gCnt) ? Math.round((boySum+girlSum)/(bCnt+gCnt)) + "%" : "0%";
+
+            tfoot.innerHTML = `
+                <tr class="summary-row">
+                    <td class="name-col">Total Boys</td>
+                    <td>${bCnt}</td> 
+                    ${dateCounters.map(c => `<td>${c.boys}</td>`).join('')}
+                    <td>${boysAvg}</td>
+                    <td></td>
+                </tr>
+                <tr class="summary-row">
+                    <td class="name-col">Total Girls</td>
+                    <td>${gCnt}</td>
+                    ${dateCounters.map(c => `<td>${c.girls}</td>`).join('')}
+                    <td>${girlsAvg}</td>
+                    <td></td>
+                </tr>
+                <tr class="summary-row">
+                    <td class="name-col">Grand Total</td>
+                    <td>${bCnt + gCnt}</td>
+                    ${dateCounters.map(c => `<td>${c.boys + c.girls}</td>`).join('')}
+                    <td>${totalAvg}</td>
+                    <td></td>
+                </tr>
+            `;
+
+            document.getElementById('avg-boys').innerText = boysAvg;
+            document.getElementById('avg-girls').innerText = girlsAvg;
+            document.getElementById('avg-total').innerText = totalAvg;
+            document.getElementById('tracked-days').innerText = availableDates.length;
+        }
+
+        function backupData() {
+            const data = { students: JSON.parse(localStorage.getItem('grade7C_data')), history: JSON.parse(localStorage.getItem('attendance_history')) };
+            const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `Attendance_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        function restoreData(input) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if(data.students) localStorage.setItem('grade7C_data', JSON.stringify(data.students));
+                    if(data.history) localStorage.setItem('attendance_history', JSON.stringify(data.history));
+                    alert("Data restored successfully.");
+                    location.reload();
+                } catch(err) { alert("Invalid file format."); }
+            };
+            reader.readAsText(input.files[0]);
+        }
+
+        function exportToCSV() {
+            let csv = [];
+            const table = document.getElementById("report-table");
+            for (let row of table.rows) {
+                let rowData = [];
+                for (let cell of row.cells) rowData.push('"' + cell.innerText + '"');
+                csv.push(rowData.join(","));
+            }
+            const blob = new Blob([csv.join("\n")], { type: 'text/csv' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Attendance_Analysis.csv";
+            link.click();
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'mm', 'a4');
+            doc.text("Grade 7B Termly Attendance Analysis", 14, 15);
+            doc.autoTable({ 
+                html: '#report-table', 
+                startY: 22, 
+                theme: 'grid', 
+                styles: { fontSize: 7 },
+                headStyles: { fillColor: [44, 62, 80] },
+                footStyles: { fillColor: [241, 244, 249], textColor: [44, 62, 80], fontStyle: 'bold' }
+            });
+            doc.save(`Attendance_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        window.onload = generateReport;
+    </script>
+</body>
+</html>

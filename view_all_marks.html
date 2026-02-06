@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results Portal | Grade 7 Merit List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { --primary: #1a2a3a; --accent: #3498db; }
+        body { background: #f0f2f5; font-family: 'Inter', sans-serif; }
+        .navbar { background: var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .results-card { background: white; border-radius: 15px; box-shadow: 0 4px 25px rgba(0,0,0,0.1); padding: 30px; margin-top: 20px; border-top: 5px solid var(--accent); }
+        .table thead { background: var(--primary); color: white; }
+        .btn-print { background: #e74c3c; color: white; border: none; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; }
+        .btn-print:hover { background: #c0392b; color: white; }
+        .search-box { max-width: 300px; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark mb-4">
+    <div class="container d-flex justify-content-between">
+        <span class="navbar-brand fw-bold">🎓 Merit List & Report Portal</span>
+        <button class="btn btn-outline-light btn-sm" onclick="downloadFullPDF()">📥 Full Class List</button>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="results-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0">Learner Rankings</h4>
+            <input type="text" id="searchInput" class="form-control search-box" onkeyup="filterTable()" placeholder="Search by name...">
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Pos</th>
+                        <th>Name</th>
+                        <th>Sex</th>
+                        <th>MAT</th>
+                        <th>SCI</th>
+                        <th>ENG</th>
+                        <th>SOC</th>
+                        <th>BEM</th>
+                        <th>CTS</th>
+                        <th>Total</th>
+                        <th>Class</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Replace with your actual deployed Script URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoX6xid2k91eSiOn7mf2qK4ktanxbUNbOw2tc1_MqlJzUzISJj_ntTuQThpGGFxR3V/exec?sheet=Master Sheet";
+
+    let studentData = [];
+
+    async function fetchData() {
+        try {
+            const response = await fetch(SCRIPT_URL);
+            studentData = await response.json();
+            renderTable(studentData);
+        } catch (e) {
+            console.error("Fetch error:", e);
+        }
+    }
+
+    function renderTable(data) {
+        const body = document.getElementById("resultsBody");
+        body.innerHTML = data.map((row, index) => `
+            <tr>
+                <td><b>${row.Pos}</b></td>
+                <td class="text-uppercase fw-semibold">${row.Name}</td>
+                <td>${row.Sex}</td>
+                <td>${row.Maths}</td>
+                <td>${row.Science}</td>
+                <td>${row.English}</td>
+                <td>${row.Social}</td>
+                <td>${row.Bemba}</td>
+                <td>${row.CTS_Subject}</td>
+                <td class="text-primary fw-bold">${row.Total}</td>
+                <td><span class="badge bg-secondary">${row.Class}</span></td>
+                <td class="text-center">
+                    <button class="btn-print" onclick='printReport(${JSON.stringify(row)})'>Print Report</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function printReport(student) {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        // Header Section
+        doc.setFillColor(26, 42, 58);
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text("OFFICIAL LEARNER REPORT", 105, 20, { align: "center" });
+        doc.setFontSize(10);
+        doc.text(`Academic Period: 2024/2025 | Class: ${student.Class}`, 105, 30, { align: "center" });
+
+        // Student Info
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(`NAME: ${student.Name.toUpperCase()}`, 15, 55);
+        doc.text(`SEX: ${student.Sex}`, 15, 62);
+        doc.text(`POSITION: ${student.Pos}`, 140, 62);
+
+        // Subject Table
+        const rows = [
+            ["Mathematics", student.Maths],
+            ["Science", student.Science],
+            ["English", student.English],
+            ["Social Studies", student.Social],
+            ["Icibemba", student.Bemba],
+            ["CTS Subject", student.CTS_Subject]
+        ];
+
+        doc.autoTable({
+            startY: 70,
+            head: [['Subject Name', 'Score obtained (100)']],
+            body: rows,
+            theme: 'striped',
+            headStyles: { fillColor: [52, 152, 219] },
+            styles: { fontSize: 11, cellPadding: 5 }
+        });
+
+        // Summary
+        const finalY = doc.lastAutoTable.finalY + 15;
+        doc.setFontSize(14);
+        doc.text(`GRAND TOTAL: ${student.Total}`, 15, finalY);
+        
+        // Footer/Signatures
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text("Teacher's Remarks: __________________________________________", 15, finalY + 15);
+        doc.text("Headteacher's Signature: __________________", 15, finalY + 30);
+        doc.text(`Date Printed: ${new Date().toLocaleDateString()}`, 140, finalY + 30);
+
+        doc.save(`${student.Name}_Report.pdf`);
+    }
+
+    function downloadFullPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'mm', 'a4');
+        doc.text("Grade 7 Combined Merit List", 14, 15);
+        doc.autoTable({ html: '#resultsTable', startY: 25, theme: 'grid' });
+        doc.save("Full_Merit_List.pdf");
+    }
+
+    function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const filtered = studentData.filter(s => s.Name.toLowerCase().includes(input));
+        renderTable(filtered);
+    }
+
+    window.onload = fetchData;
+</script>
+
+</body>
+</html>

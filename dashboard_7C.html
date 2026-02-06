@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Grade 7 Management</title>
+    <style>
+        :root { 
+            --primary: #2c3e50; --accent: #3498db; --light: #f4f7f6; 
+            --yellow: #f1c40f; --success: #27ae60; --danger: #e74c3c;
+            --theme-color: #2c3e50; /* Dynamically updated */
+        }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--light); display: flex; padding-top: 40px; }
+        
+        .signature-scroll { width: 100%; background: #1a252f; color: var(--yellow); padding: 10px 0; position: fixed; top: 0; left: 0; white-space: nowrap; overflow: hidden; font-weight: bold; z-index: 2000; border-bottom: 2px solid var(--theme-color); }
+        .marquee { display: inline-block; animation: scroll 25s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        #sidebar { width: 250px; background: var(--primary); color: white; height: 100vh; position: fixed; left: 0; transition: 0.3s; z-index: 1000; border-right: 5px solid var(--theme-color); }
+        .profile-section { padding: 30px 20px; text-align: center; border-bottom: 1px solid #34495e; }
+        .profile-pic { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--yellow); object-fit: cover; background: white; }
+        
+        nav ul { list-style: none; padding: 0; }
+        nav ul li a { padding: 15px 20px; display: block; color: white; text-decoration: none; border-bottom: 1px solid #34495e; transition: 0.3s; }
+        nav ul li a:hover { background: var(--theme-color); padding-left: 30px; }
+
+        #main { flex: 1; margin-left: 250px; padding: 30px; width: calc(100% - 250px); }
+        
+        .welcome-banner { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 10px solid var(--theme-color); margin-bottom: 30px; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h3 { margin: 0; color: #7f8c8d; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card p { margin: 15px 0 0; font-size: 36px; font-weight: bold; color: var(--primary); }
+        
+        .logout-btn { margin: 20px; padding: 10px; background: var(--danger); color: white; border: none; border-radius: 5px; cursor: pointer; width: 80%; }
+    </style>
+</head>
+<body>
+
+    <div class="signature-scroll">
+        <div class="marquee">PUTA PRIMARY SCHOOL • GRADE 7 OFFICIAL TEACHER PORTAL • CLOUD SYNC ACTIVE • SECURE SESSION</div>
+    </div>
+
+    <aside id="sidebar">
+        <div class="profile-section">
+            <img id="user-pic" src="https://www.w3schools.com/howto/img_avatar.png" class="profile-pic">
+            <h3 id="display-name" style="margin: 15px 0 0 0;">Teacher Name</h3>
+            <span id="display-class" style="font-size: 12px; color: var(--yellow); font-weight: bold;">CLASS ---</span>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#" id="nav-dash">🏠 Dashboard</a></li>
+                <li><a href="enrollment_7A.html">👥 My Enrollment</a></li>
+                <li><a href="daily_register.html">📝 Daily Register</a></li>
+                <li><a href="termly_attendance.html">📊 View Grade 7C Register</a></li>
+                <li><a href="master_dashboard.html">📊 Master Dashboard</a></li>
+                <li><a href="monthly_report.html">📊 Monthly Report</a></li>
+                <li><a href="mark_entry_7A.html">📊 Enter Grade 7C Marks</a></li>
+                <li><a href="view_marks_7A.html">📊 View Grade 7C Marks</a></li>
+                <li><a href="view_all_marks.html">📊 View All Results</a></li>
+                
+                <li><a href="enrollment_view_all.html">📊 View All Grade 7 Pupils' Enrollment</a></li>
+            </ul>
+        </nav>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </aside>
+
+    <main id="main">
+        <div class="welcome-banner">
+            <h1 id="welcome-text">Welcome, Teacher</h1>
+            <p id="sync-status" style="color: var(--success); font-weight: bold;">● System Connected to Live Sheets</p>
+        </div>
+        
+        <div class="stat-grid">
+            <div class="stat-card" style="border-top: 5px solid var(--accent);"><h3>Boys Enrolled</h3><p id="b-count">0</p></div>
+            <div class="stat-card" style="border-top: 5px solid #e91e63;"><h3>Girls Enrolled</h3><p id="g-count">0</p></div>
+            <div class="stat-card" style="border-top: 5px solid var(--success);"><h3>Total Learners</h3><p id="t-count">0</p></div>
+        </div>
+    </main>
+
+    <script>
+        // Configuration
+        const ENROLLMENT_API = "https://script.google.com/macros/s/AKfycbxb5wNnyXo4a7WAzR12k1PfYV3Qmpym89H-siOfg6uDSz3hjutANEVLnpkUcLX6dbLp/exec";
+        
+        // This object tells the dashboard how to look based on the filename
+        const PAGE_CONFIG = {
+            "dashboard_7a.html": { class: "Grade 7A", teacher: "Ms. Milambo", color: "#6b11cb" },
+            "dashboard_7b.html": { class: "Grade 7B", teacher: "Mr. Katongo", color: "#1e3c72" },
+            "dashboard_7c.html": { class: "Grade 7C", teacher: "Mr. Mwanto", color: "#00b09b" }
+        };
+
+        function initDashboard() {
+            // Check if logged in
+            if(localStorage.getItem('loggedIn') !== 'true') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Detect which dashboard this is by the URL
+            const fileName = window.location.pathname.split("/").pop().toLowerCase();
+            const config = PAGE_CONFIG[fileName] || PAGE_CONFIG["dashboard_7a.html"];
+
+            // Update UI
+            document.getElementById('display-name').innerText = config.teacher;
+            document.getElementById('display-class').innerText = config.class;
+            document.getElementById('welcome-text').innerText = `Welcome, ${config.teacher}`;
+            document.documentElement.style.setProperty('--theme-color', config.color);
+            document.getElementById('nav-dash').style.background = config.color;
+
+            fetchData(config.class);
+        }
+
+        async function fetchData(className) {
+            try {
+                const response = await fetch(`${ENROLLMENT_API}?action=readEnrollment&sheet=${encodeURIComponent(className)}`);
+                const result = await response.json();
+                
+                if(result.status === 'success') {
+                    const s = result.summary || {};
+                    document.getElementById('b-count').innerText = s.boys || 0;
+                    document.getElementById('g-count').innerText = s.girls || 0;
+                    document.getElementById('t-count').innerText = s.total || 0;
+                }
+            } catch (error) {
+                console.log("Offline or Error");
+            }
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>

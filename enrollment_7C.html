@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment | Grade 7C System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { 
+            --primary: #00b09b; /* Mr. Mwanto's Teal */
+            --accent: #96c93d; 
+            --light: #f4f7f6; 
+            --danger: #e74c3c; 
+            --success: #27ae60;
+            --dark: #2c3e50;
+        }
+
+        body { margin: 0; font-family: 'Consolas', 'Segoe UI', monospace; background: var(--light); display: flex; flex-direction: row; min-height: 100vh; }
+
+        /* Sidebar - Responsive Logic */
+        #sidebar { 
+            width: 260px; background: var(--dark); color: white; 
+            display: flex; flex-direction: column; transition: 0.3s;
+            position: sticky; top: 0; height: 100vh;
+        }
+
+        .profile-area { padding: 30px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .avatar { 
+            width: 65px; height: 65px; background: linear-gradient(45deg, var(--primary), var(--accent)); 
+            border-radius: 10px; margin: 0 auto 12px; display: flex; align-items: center; 
+            justify-content: center; font-size: 24px; font-weight: bold; color: white; 
+        }
+
+        /* Main Content Area */
+        .main-content { flex: 1; padding: 25px; box-sizing: border-box; width: 100%; }
+        .card { 
+            background: white; border-radius: 0px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            padding: 25px; margin-bottom: 25px; border-left: 8px solid var(--primary); 
+        }
+        
+        /* Form Layout */
+        .input-grid { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 20px; margin-bottom: 25px; 
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        label { margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; }
+        input, select { padding: 12px; border: 2px solid #e0e0e0; border-radius: 4px; font-size: 15px; outline: none; transition: 0.2s; }
+        input:focus { border-color: var(--primary); background: #f0fffb; }
+        input[readonly] { background: #eee; color: #555; border-color: #ddd; }
+        
+        /* Table Styling */
+        .table-responsive { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 15px; background: #f8f9fa; color: var(--dark); border-bottom: 2px solid var(--primary); font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #f1f1f1; font-size: 14px; }
+
+        .btn-main { 
+            width: 100%; padding: 15px; border: none; border-radius: 4px; 
+            color: white; font-weight: bold; cursor: pointer; transition: 0.3s;
+            background: var(--primary); font-size: 16px; text-transform: uppercase;
+        }
+        .btn-main:hover { background: var(--dark); }
+
+        /* Mobile View Adjustments */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: auto; position: relative; }
+            .profile-area { padding: 20px; }
+            .main-content { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="profile-area">
+        <div class="avatar">AM</div>
+        <h5 style="margin: 0;">Mr. Mwanto</h5>
+        <small style="opacity: 0.6;">Grade 7C Teacher</small>
+    </div>
+    <div style="padding: 20px;">
+        <button class="btn-main" style="background: rgba(255,255,255,0.08); margin-bottom: 12px; font-size: 13px;" onclick="location.reload()">System Refresh</button>
+        <button class="btn-main" style="background: var(--danger); font-size: 13px;" onclick="downloadPDF()">Export 7C PDF</button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="card">
+        <h2 style="margin: 0; color: var(--primary);">Grade 7C | Tech Enrollment</h2>
+        <p style="color: #666;">Synchronize learners to the Master Server and 7C Database.</p>
+        <hr style="opacity: 0.1; margin: 20px 0;">
+        
+        <div class="input-grid">
+            <div class="form-group">
+                <label>Network Timestamp</label>
+                <input type="text" id="timestampField" readonly tabindex="-1">
+            </div>
+            <div class="form-group">
+                <label>Learner Name (UPPERCASE)</label>
+                <input type="text" id="studentName" placeholder="ENTER FULL NAME" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Learner Gender</label>
+                <select id="gender">
+                    <option value="Boy">Boy</option>
+                    <option value="Girl">Girl</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-main" id="submitBtn" onclick="saveToCloud()">Transmit Data to 7C Server</button>
+    </div>
+
+    <div class="card">
+        <h4 style="margin: 0 0 15px 0;">7C Class Log Entries</h4>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Learner Name</th>
+                        <th>Gender</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- SERVER SETTINGS ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxb5wNnyXo4a7WAzR12k1PfYV3Qmpym89H-siOfg6uDSz3hjutANEVLnpkUcLX6dbLp/exec"; 
+    const CLASS_NAME = "Grade 7C";
+    const TEACHER = "Mr. Mwanto";
+    const STORAGE_KEY = "grade7C_attendance_data";
+
+    function updateTimestamp() {
+        document.getElementById('timestampField').value = new Date().toLocaleString();
+    }
+    setInterval(updateTimestamp, 1000);
+
+    function saveToCloud() {
+        const nameInput = document.getElementById('studentName');
+        const name = nameInput.value.trim().toUpperCase(); 
+        const gender = document.getElementById('gender').value;
+        const time = document.getElementById('timestampField').value;
+        const btn = document.getElementById('submitBtn');
+
+        if(!name) { alert("Input Required: Name field is empty."); return; }
+
+        // --- ANTI-DUPLICATE LOGIC ---
+        const localData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        const isDuplicate = localData.some(entry => entry.name === name);
+
+        if (isDuplicate) {
+            alert(`DATA CONFLICT: "${name}" has already been processed for today.`);
+            return; 
+        }
+
+        const payload = {
+            className: CLASS_NAME,
+            teacher: TEACHER,
+            name: name,
+            gender: gender,
+            timestamp: time
+        };
+
+        // UI Feedback
+        btn.disabled = true;
+        btn.innerText = "Transmitting...";
+
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(payload)
+        }).then(() => {
+            // Save Locally after check
+            localData.unshift(payload);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(localData));
+            
+            alert("Transmission Successful: Records Updated.");
+            nameInput.value = "";
+            btn.disabled = false;
+            btn.innerText = "Transmit Data to 7C Server";
+            renderTable();
+        }).catch(err => {
+            alert("Upload Failed: Check connection.");
+            btn.disabled = false;
+            btn.innerText = "Transmit Data to 7C Server";
+        });
+    }
+
+    function renderTable() {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        document.getElementById('tableBody').innerHTML = data.map(row => `
+            <tr>
+                <td style="color: #666; font-family: 'Consolas', monospace; font-size: 12px;">${row.timestamp}</td>
+                <td style="font-weight: bold;">${row.name}</td>
+                <td>${row.gender}</td>
+                <td style="color: var(--success); font-weight: bold;">[ ONLINE ]</td>
+            </tr>
+        `).join('');
+    }
+
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        doc.setFontSize(18);
+        doc.text(`7C ENROLLMENT LOG - ${new Date().toLocaleDateString()}`, 14, 20);
+        doc.autoTable({
+            head: [['Time', 'Learner', 'Gender']],
+            body: data.map(r => [r.timestamp, r.name, r.gender]),
+            startY: 28,
+            headStyles: { fillColor: [0, 176, 155] }
+        });
+        doc.save(`7C_Log_Report.pdf`);
+    }
+
+    window.onload = () => { updateTimestamp(); renderTable(); };
+</script>
+
+</body>
+</html>
